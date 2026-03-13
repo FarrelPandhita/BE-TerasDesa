@@ -1,0 +1,11 @@
+﻿src/middleware/auth-middleware.ts(18,33): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/middleware/auth-middleware.ts(19,9): error TS2339: Property 'user' does not exist on type 'Request<ParamsDictionary, any, any, ParsedQs, Record<string, any>>'.
+src/services/google-auth-service.ts(9,45): error TS2379: Argument of type '{ idToken: string; audience: string | undefined; }' is not assignable to parameter of type 'VerifyIdTokenOptions' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'audience' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string | string[]'.
+      Type 'undefined' is not assignable to type 'string | string[]'.
+src/services/google-auth-service.ts(14,26): error TS2339: Property 'getPayload' does not exist on type 'Promise<LoginTicket> & void'.
+src/services/google-auth-service.ts(27,7): error TS2322: Type '{ email: any; name: any; googleId: any; }' is not assignable to type '(Without<UserCreateInput, UserUncheckedCreateInput> & UserUncheckedCreateInput) | (Without<...> & UserCreateInput)'.
+  Type '{ email: any; name: any; googleId: any; }' is not assignable to type 'Without<UserUncheckedCreateInput, UserCreateInput> & UserCreateInput'.
+    Property 'id' is missing in type '{ email: any; name: any; googleId: any; }' but required in type 'UserCreateInput'.
