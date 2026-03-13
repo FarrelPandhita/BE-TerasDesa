@@ -158,7 +158,7 @@ return token
 
 ---
 
-# 3. Login / Register with Google OAuth
+# 3. NEXT IMPLEMENTATION - Login / Register with Google OAuth
 
 Menggunakan akun Google untuk login atau membuat akun baru.
 
@@ -234,65 +234,12 @@ Authorization: Bearer {token}
   "data": {
     "id": "uuid",
     "name": "Budi Santoso",
-    "email":note "budi@mail.com",
+    "email":"budi@mail.com",
     "role": "citizen"
   }
 }
 ```
 
----
-
-# 5. Update User Profile
-
-Memperbarui profil pengguna.
-
-## Endpoint
-
-```
-PATCH /api/users/current
-```
-
-## Request Body
-
-```json
-{
-  "name": "Budi Updated"
-}
-```
-
-## Response
-
-```json
-{
-  "data": {
-    "id": "uuid",
-    "name": "Budi Updated",
-    "email": "budi@mail.com"
-  }
-}
-```
-
----
-
-# 6. Delete User (Soft Delete)
-
-Menghapus akun pengguna menggunakan **soft delete**.
-
-## Endpoint
-
-```
-DELETE /api/users/current
-```
-
-## Backend Flow
-
-```
-verify token
-↓
-set deleted_at timestamp
-↓
-user dianggap tidak aktif
-```
 
 ---
 
@@ -315,14 +262,3 @@ Password **tidak pernah disimpan dalam bentuk plaintext**.
 
 
 
-
-# Future Improvements
-
-Fitur yang dapat ditambahkan di masa depan:
-
-```
-JWT refresh token
-rate limiting
-email verification
-password reset
-```
