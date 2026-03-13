@@ -20,8 +20,10 @@ Password disimpan menggunakan **bcrypt hashing**.
 User
 -----
 id (UUID)
+username
 name
 email
+phone_number
 password_hash (nullable for OAuth users)
 google_id (nullable)
 role
@@ -59,8 +61,10 @@ POST /api/users
 
 ```json
 {
+  "username": "budisantoso",
   "name": "Budi Santoso",
   "email": "budi@mail.com",
+  "phone_number": "081234567890",
   "password": "Pass123!"
 }
 ```
@@ -68,7 +72,9 @@ POST /api/users
 ## Validation Rules
 
 ```
-name        : required
+username    : required, max 80 chars
+name        : required, max 120 chars
+phone_number: required, min 5, max 20 chars
 email       : valid email
 password    : minimum 6 characters
               must contain letter
@@ -98,8 +104,10 @@ return response
 {
   "data": {
     "id": "uuid",
+    "username": "budisantoso",
     "name": "Budi Santoso",
     "email": "budi@mail.com",
+    "phone_number": "081234567890",
     "role": "citizen"
   }
 }
@@ -226,7 +234,7 @@ Authorization: Bearer {token}
   "data": {
     "id": "uuid",
     "name": "Budi Santoso",
-    "email": "budi@mail.com",
+    "email":note "budi@mail.com",
     "role": "citizen"
   }
 }
@@ -304,53 +312,9 @@ Password **tidak pernah disimpan dalam bentuk plaintext**.
 
 ---
 
-## OAuth Token Verification
 
-Backend harus memverifikasi token menggunakan:
 
-```
-Google OAuth2 API
-```
 
-Library yang dapat digunakan:
-
-```
-google-auth-library
-```
-
----
-
-# Recommended Development Order (Fastest)
-
-Untuk development cepat, implementasi API berikut terlebih dahulu:
-
-```
-1. POST /api/users
-2. POST /api/users/login
-3. GET /api/users/current
-```
-
-Setelah itu baru implementasikan:
-
-```
-POST /api/users/oauth/google
-```
-
-karena OAuth membutuhkan setup tambahan.
-
----
-
-# Testing Tools
-
-API dapat diuji menggunakan:
-
-```
-Postman
-supertest
-jest
-```
-
----
 
 # Future Improvements
 

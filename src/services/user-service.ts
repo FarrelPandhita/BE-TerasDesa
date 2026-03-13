@@ -10,7 +10,9 @@ export async function registerUser(data: any) {
   const user = await prisma.user.create({
     data: {
       id: uuid(),
+      username: data.username,
       name: data.name,
+      phoneNumber: data.phone_number,
       email: data.email,
       passwordHash: hashedPassword
     }
@@ -37,4 +39,22 @@ export async function loginUser(data: any) {
   const token = generateToken(user.id)
 
   return token
+}
+
+export async function getUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      username: true,
+      name: true,
+      phoneNumber: true,
+      email: true,
+      role: true
+    }
+  })
+
+  if (!user) throw new Error("User not found")
+
+  return user
 }

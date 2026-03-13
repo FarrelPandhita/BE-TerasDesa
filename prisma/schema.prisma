@@ -9,8 +9,10 @@ datasource db {
 
 model User {
   id           String   @id @db.Char(36)
-  name         String
-  email        String   @unique
+  username     String   @db.VarChar(80)
+  name         String   @db.VarChar(120)
+  email        String   @unique @db.VarChar(120)
+  phoneNumber  String   @map("phone_number") @db.VarChar(20)
   passwordHash String?  @db.VarChar(255)
   googleId     String?  @unique
   role         Role     @default(citizen)
