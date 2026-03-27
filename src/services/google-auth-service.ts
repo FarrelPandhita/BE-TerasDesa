@@ -12,51 +12,38 @@ export async function loginWithGoogle(idToken: string): Promise<string> {
 
   const client = new OAuth2Client(clientId)
 
-  try {
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: clientId,
-    })
+  const ticket = await client.verifyIdToken({ idToken, audience: clientId })
+  const payload = ticket.getPayload()
 
-    const payload = ticket.getPayload()
-    if (!payload || !payload.email || !payload.name || !payload.sub) {
-      throw new AppError(400, "Invalid Google token payload")
-    }
+  if (!payload || !payload.email || !payload.name || !payload.sub) {
+    throw new AppError(400, "Invalid Google token payload")
+  }
 
-    const email = payload.email as string
-    const name = payload.name as string
-    const googleId = payload.sub as string
+  const { email, name, sub: googleId } = payload
 
-    let user = await prisma.user.findUnique({ where: { email } })
+  let user = await prisma.user.findUnique({ where: { email } })
 
-    if (user) {
-      // User found, but missing googleId (registered manually before)
-      if (!user.googleId) {
-        user = await prisma.user.update({
-          where: { email },
-          data: { googleId },
-        })
-      }
-    } else {
-      // User doesn't exist, create a new one automatically
-      // We will generate a random empty phone number and username since it's required in schema
-      const newUserId = uuid()
-      user = await prisma.user.create({
-        data: {
-          id: newUserId,
-          email,
-          name,
-          username: (email.split("@")[0] ?? "user").substring(0, 80), // fallback username based on email
-          phoneNumber: "-", // default value since google doesn't provide it reliably
-          googleId,
-          // No password hash needed
-        },
+  if (user) {
+    // link google account if user registered manually before
+    if (!user.googleId) {
+      user = await prisma.user.update({
+        where: { email },
+        data: { googleId },
       })
     }
-
-    return generateToken(user.id, user.role)
-  } catch (error) {
-    console.error("[Google Auth Error]", error)
-    throw new AppError(401, "Invalid Google ID Token")
+  } else {
+    // auto-register new user from google profile
+    user = await prisma.user.create({
+      data: {
+        id: uuid(),
+        email,
+        name,
+        username: (email.split("@")[0] ?? "user").substring(0, 80),
+        phoneNumber: "-",
+        googleId,
+      },
+    })
   }
+
+  return generateToken(user.id, user.role)
 }

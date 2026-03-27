@@ -1,6 +1,6 @@
 import { prisma } from "../prisma/prisma-client"
 
-// Global Dashboard Statistics
+// aggregates dashboard stats for projects and budget
 export async function getDashboardStats() {
   const [totalProjects, activeProjects, finishedProjects, budgetAgg] =
     await prisma.$transaction([

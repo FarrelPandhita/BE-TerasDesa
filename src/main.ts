@@ -10,33 +10,33 @@ import { errorMiddleware } from "./middleware/error-middleware"
 
 const app = express()
 
-// Security Middleware
-app.use(helmet()) // Sets secure HTTP headers
+// security
+app.use(helmet())
 app.use(cors({
   origin: process.env.FRONTEND_URL ?? "*",
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }))
 
-// Body Parsing
-app.use(express.json({ limit: "5mb" }))           // Limit payload size
-app.use(express.urlencoded({ extended: true }))    // Support form-encoded bodies
+// body parsing
+app.use(express.json({ limit: "5mb" }))
+app.use(express.urlencoded({ extended: true }))
 
-// Routes
-app.use("/api", userRoutes)
-app.use("/api", projectRoutes)
-app.use("/api", statisticsRoutes)
+// versioned routes
+app.use("/api/v1", userRoutes)
+app.use("/api/v1", projectRoutes)
+app.use("/api/v1", statisticsRoutes)
 
-// Health Check
+// health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() })
 })
 
-// Global Error Handler (MUST be last)
+// global error handler (must be last)
 app.use(errorMiddleware)
 
-// Start Server
-const PORT = process.env.PORT ?? 3000
+// start server
+const PORT = process.env.PORT 
 app.listen(PORT, () => {
   console.log(`[TerasDesa] API running on port ${PORT}`)
 })

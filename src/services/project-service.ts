@@ -7,7 +7,6 @@ import {
   ListProjectsQuery,
 } from "../validation/project-validation"
 
-// Return Types
 export interface ProjectListItem {
   id: string
   title: string
@@ -27,7 +26,7 @@ export interface ProjectListResult {
   totalPages: number
 }
 
-// List Projects (public)
+// paginated project list with optional search and year filter
 export async function listProjects(query: ListProjectsQuery) {
   const { search, tahun, page, limit } = query
   const skip = (page - 1) * limit
@@ -36,9 +35,7 @@ export async function listProjects(query: ListProjectsQuery) {
     prisma.project.findMany({
       where: {
         deletedAt: null,
-        ...(search
-          ? { title: { contains: search } }
-          : {}),
+        ...(search ? { title: { contains: search } } : {}),
         ...(tahun
           ? {
               startDate: {
@@ -73,7 +70,7 @@ export async function listProjects(query: ListProjectsQuery) {
   return {
     items: items.map((p) => ({
       ...p,
-      totalBudget: p.totalBudget.toString(), // BigInt → string for JSON safety
+      totalBudget: p.totalBudget.toString(),
     })),
     total,
     page,
@@ -82,7 +79,7 @@ export async function listProjects(query: ListProjectsQuery) {
   }
 }
 
-// Get Single Project (public)
+// returns full project detail with relations
 export async function getProjectById(id: string) {
   const project = await prisma.project.findFirst({
     where: { id, deletedAt: null },
@@ -91,7 +88,6 @@ export async function getProjectById(id: string) {
       expenses: true,
       updates: { orderBy: { createdAt: "desc" } },
       fundings: true,
-
     },
   })
 
@@ -110,11 +106,10 @@ export async function getProjectById(id: string) {
     })),
     updates: project.updates,
     timelines: project.timelines,
-
   }
 }
 
-// Create Project (admin)
+// creates project with optional timeline and expenses in a transaction
 export async function createProject(
   data: CreateProjectRequest,
   adminId: string
@@ -166,7 +161,7 @@ export async function createProject(
   return { id: project.id, title: project.title }
 }
 
-// Update Project Progress (admin)
+// records a progress update and adjusts project status
 export async function updateProjectProgress(
   projectId: string,
   data: UpdateProgressRequest
@@ -197,7 +192,6 @@ export async function updateProjectProgress(
   return { message: "Progress updated successfully" }
 }
 
-// Helpers
 function maskName(name: string): string {
   if (!name) return "Anonim"
   return name.charAt(0) + "***"

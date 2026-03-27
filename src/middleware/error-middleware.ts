@@ -3,7 +3,7 @@ import { ZodError } from "zod"
 import { AppError } from "../utils/app-error"
 import { Prisma } from "@prisma/client"
 
-// Global error handler middleware
+// global error handler middleware
 export function errorMiddleware(
   err: unknown,
   _req: Request,
@@ -35,6 +35,7 @@ export function errorMiddleware(
       return
     }
   }
+
   console.error("[Unhandled Error]", err)
   res.status(500).json({ errors: "Internal server error." })
 }

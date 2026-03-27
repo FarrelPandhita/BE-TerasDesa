@@ -15,21 +15,21 @@ import {
   updateProjectProgress,
 } from "../services/project-service"
 
-// GET /api/projects
+// GET /api/v1/projects
 export const getAllProjects = asyncWrapper(async (req: Request, res: Response) => {
   const query = listProjectsQueryValidation.parse(req.query)
   const result = await listProjects(query)
   res.json({ data: result })
 })
 
-// GET /api/projects/:id
+// GET /api/v1/projects/:id
 export const getProject = asyncWrapper(async (req: Request, res: Response) => {
   const id = getParam(req, "id")
   const project = await getProjectById(id)
   res.json({ data: project })
 })
 
-// POST /api/projects
+// POST /api/v1/projects
 export const addProject = asyncWrapper(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError(401, "Unauthorized")
   const validated = createProjectValidation.parse(req.body)
@@ -37,7 +37,7 @@ export const addProject = asyncWrapper(async (req: AuthRequest, res: Response) =
   res.status(201).json({ data: project })
 })
 
-// POST /api/projects/:id/updates
+// POST /api/v1/projects/:id/updates
 export const addProjectUpdate = asyncWrapper(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError(401, "Unauthorized")
   const id = getParam(req, "id")

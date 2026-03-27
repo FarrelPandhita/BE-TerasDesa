@@ -5,9 +5,8 @@ import { generateToken } from "../utils/jwt"
 import { AppError } from "../utils/app-error"
 import { RegisterUserRequest, LoginUserRequest } from "../validation/user-validation"
 
-// Register
+// creates a new user after checking email uniqueness
 export async function registerUser(data: RegisterUserRequest) {
-  // Check if email already used
   const existing = await prisma.user.findUnique({ where: { email: data.email } })
   if (existing) throw new AppError(409, "Email is already registered")
 
@@ -35,13 +34,12 @@ export async function registerUser(data: RegisterUserRequest) {
   return user
 }
 
-// Login
+// authenticates user by email/password and returns JWT
 export async function loginUser(data: LoginUserRequest): Promise<string> {
   const user = await prisma.user.findUnique({
     where: { email: data.email },
   })
 
-  // Use a generic error message to avoid email enumeration attacks
   if (!user || !user.passwordHash) {
     throw new AppError(401, "Invalid email or password")
   }
@@ -51,11 +49,10 @@ export async function loginUser(data: LoginUserRequest): Promise<string> {
     throw new AppError(401, "Invalid email or password")
   }
 
-  // this token includes role for RBAC
   return generateToken(user.id, user.role)
 }
 
-// Get Current User
+// fetches user profile by id
 export async function getUser(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
