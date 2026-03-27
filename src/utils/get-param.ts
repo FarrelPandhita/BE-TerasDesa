@@ -1,0 +1,12 @@
+import { Request } from "express"
+import { AppError } from "./app-error"
+
+// getParam – safely extracts a string route param from Express 5 Request.
+
+export function getParam(req: Request, key: string): string {
+  const value = req.params[key]
+  if (!value || Array.isArray(value)) {
+    throw new AppError(400, `Missing or invalid route parameter: ${key}`)
+  }
+  return value
+}

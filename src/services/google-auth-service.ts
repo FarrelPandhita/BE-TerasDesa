@@ -1,0 +1,62 @@
+import { OAuth2Client } from "google-auth-library"
+import { prisma } from "../prisma/prisma-client"
+import { v4 as uuid } from "uuid"
+import { generateToken } from "../utils/jwt"
+import { AppError } from "../utils/app-error"
+
+export async function loginWithGoogle(idToken: string): Promise<string> {
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  if (!clientId) {
+    throw new AppError(500, "Google OAuth is not configured on the server")
+  }
+
+  const client = new OAuth2Client(clientId)
+
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: clientId,
+    })
+
+    const payload = ticket.getPayload()
+    if (!payload || !payload.email || !payload.name || !payload.sub) {
+      throw new AppError(400, "Invalid Google token payload")
+    }
+
+    const email = payload.email as string
+    const name = payload.name as string
+    const googleId = payload.sub as string
+
+    let user = await prisma.user.findUnique({ where: { email } })
+
+    if (user) {
+      // User found, but missing googleId (registered manually before)
+      if (!user.googleId) {
+        user = await prisma.user.update({
+          where: { email },
+          data: { googleId },
+        })
+      }
+    } else {
+      // User doesn't exist, create a new one automatically
+      // We will generate a random empty phone number and username since it's required in schema
+      const newUserId = uuid()
+      user = await prisma.user.create({
+        data: {
+          id: newUserId,
+          email,
+          name,
+          username: (email.split("@")[0] ?? "user").substring(0, 80), // fallback username based on email
+          phoneNumber: "-", // default value since google doesn't provide it reliably
+          googleId,
+          // No password hash needed
+        },
+      })
+    }
+
+    return generateToken(user.id, user.role)
+  } catch (error) {
+    console.error("[Google Auth Error]", error)
+    throw new AppError(401, "Invalid Google ID Token")
+  }
+}

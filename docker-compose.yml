@@ -1,0 +1,15 @@
+services:
+  farrel_be:
+    build: .
+    container_name: farrel_be
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3008:3008"
+    env_file:
+      - .env
+    networks:
+      - mariadb_network
+
+networks:
+  mariadb_network:
+    external: true

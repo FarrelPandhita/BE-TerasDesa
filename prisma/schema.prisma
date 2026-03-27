@@ -7,24 +7,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id           String   @id @db.Char(36)
-  username     String   @db.VarChar(80)
-  name         String   @db.VarChar(120)
-  email        String   @unique @db.VarChar(120)
-  phoneNumber  String   @map("phone_number") @db.VarChar(20)
-  passwordHash String?  @db.VarChar(255)
-  googleId     String?  @unique
-  role         Role     @default(citizen)
+enum Role {
+  admin
+  citizen
+}
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+enum ProjectStatus {
+  perencanaan
+  berjalan
+  selesai
+}
+
+enum TimelineStatus {
+  selesai
+  diproses
+  belum
+}
+
+model User {
+  id           String  @id @db.Char(36)
+  username     String  @db.VarChar(80)
+  name         String  @db.VarChar(120)
+  email        String  @unique @db.VarChar(120)
+  phoneNumber  String  @map("phone_number") @db.VarChar(20)
+  passwordHash String? @map("password_hash") @db.VarChar(255)
+  googleId     String? @unique @map("google_id")
+  role         Role    @default(citizen)
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  projects        Project[]
 
   @@map("users")
 }
 
-enum Role {
-  admin
-  citizen
+model Project {
+  id          String        @id @db.Char(36)
+  title       String        @db.VarChar(200)
+  description String        @db.Text
+  location    String        @db.VarChar(200)
+  totalBudget BigInt        @map("total_budget")
+  status      ProjectStatus @default(perencanaan)
+  progress    Int           @default(0)
+
+  createdBy String @map("created_by") @db.Char(36)
+  user      User   @relation(fields: [createdBy], references: [id])
+
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  // Relations
+  updates   ProjectUpdate[]
+  timelines ProjectTimeline[]
+  expenses  DetailPengeluaranAnggaran[]
+  fundings  ProjectFunding[]
+
+  @@map("projects")
+}
+
+model ProjectUpdate {
+  id        String  @id @db.Char(36)
+  projectId String  @map("project_id") @db.Char(36)
+  project   Project @relation(fields: [projectId], references: [id])
+
+  progress    Int
+  description String @db.Text
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("project_updates")
+}
+
+model ProjectTimeline {
+  id        String  @id @db.Char(36)
+  projectId String  @map("project_id") @db.Char(36)
+  project   Project @relation(fields: [projectId], references: [id])
+
+  stageName String         @map("stage_name") @db.VarChar(150)
+  stageDate DateTime       @map("stage_date") @db.Date
+  status    TimelineStatus @default(belum)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("project_timeline")
+}
+
+model DetailPengeluaranAnggaran {
+  id        String  @id @db.Char(36)
+  projectId String  @map("project_id") @db.Char(36)
+  project   Project @relation(fields: [projectId], references: [id])
+
+  expenseName String  @map("expense_name") @db.VarChar(150)
+  amount      BigInt
+  percentage  Decimal @db.Decimal(5, 2)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("detail_pengeluaran_anggaran")
+}
+
+model ProjectFunding {
+  id        String  @id @db.Char(36)
+  projectId String  @map("project_id") @db.Char(36)
+  project   Project @relation(fields: [projectId], references: [id])
+
+  amount BigInt
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("project_funding")
 }

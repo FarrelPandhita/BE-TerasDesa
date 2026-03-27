@@ -1,33 +1,31 @@
 import { z } from "zod"
 
+// Regular Auth
+
 export const registerUserValidation = z.object({
-  username: z.string()
-    .min(1, { message: "Username is required" })
-    .max(80, { message: "Username cannot exceed 80 characters" }),
-
-  name: z.string()
-    .min(1, { message: "Name is required" })
-    .max(120, { message: "Name cannot exceed 120 characters" }),
-
-  phone_number: z.string()
-    .min(5, { message: "Phone number is too short" })
-    .max(20, { message: "Phone number cannot exceed 20 characters" }),
-
-  email: z.email({ message: "Email format is invalid" }),
-
-  password: z.string()
-    .min(6, { message: "Password must be at least 6 characters" })
-    .regex(/[A-Za-z]/, { message: "Password must contain at least one letter" })
-    .regex(/[0-9]/, { message: "Password must contain at least one number" })
-    .regex(/[^A-Za-z0-9]/, { message: "Password must contain at least one symbol" })
-
+  username: z.string().min(1).max(80),
+  name: z.string().min(1).max(120),
+  email: z.email().max(120),
+  phone_number: z.string().min(5).max(20),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .regex(/[a-zA-Z]/, "Password must contain at least one letter")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one symbol"),
 })
-
 
 export const loginUserValidation = z.object({
-  email: z.email({ message: "Email format is invalid" })
-    .min(1, { message: "Email is required" }),
-
-  password: z.string()
-    .min(1, { message: "Password is required" })
+  email: z.email(),
+  password: z.string().min(1),
 })
+
+// Google OAuth
+
+export const googleOAuthValidation = z.object({
+  idToken: z.string().min(1, "Google ID Token is required"),
+})
+
+export type RegisterUserRequest = z.infer<typeof registerUserValidation>
+export type LoginUserRequest = z.infer<typeof loginUserValidation>
+export type GoogleOAuthRequest = z.infer<typeof googleOAuthValidation>
