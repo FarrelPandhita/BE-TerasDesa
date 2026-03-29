@@ -28,7 +28,7 @@ app.use("/api/v1", projectRoutes)
 app.use("/api/v1", statisticsRoutes)
 
 // health check
-app.get("/health", (_req, res) => {
+app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() })
 })
 
