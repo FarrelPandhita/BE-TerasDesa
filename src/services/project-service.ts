@@ -26,7 +26,7 @@ export interface ProjectListResult {
   totalPages: number
 }
 
-// paginated project list with optional search and year filter
+// Returns paginated list of projects with optional search and year filter.
 export async function listProjects(query: ListProjectsQuery) {
   const { search, tahun, page, limit } = query
   const skip = (page - 1) * limit
@@ -35,7 +35,9 @@ export async function listProjects(query: ListProjectsQuery) {
     prisma.project.findMany({
       where: {
         deletedAt: null,
-        ...(search ? { title: { contains: search } } : {}),
+        ...(search
+          ? { title: { contains: search } }
+          : {}),
         ...(tahun
           ? {
               startDate: {
@@ -70,7 +72,7 @@ export async function listProjects(query: ListProjectsQuery) {
   return {
     items: items.map((p) => ({
       ...p,
-      totalBudget: p.totalBudget.toString(),
+      totalBudget: p.totalBudget.toString(), // BigInt serialized as string for JSON safety
     })),
     total,
     page,
@@ -79,7 +81,7 @@ export async function listProjects(query: ListProjectsQuery) {
   }
 }
 
-// returns full project detail with relations
+// Returns full project detail including timelines, expenses, updates, fundings, and comments.
 export async function getProjectById(id: string) {
   const project = await prisma.project.findFirst({
     where: { id, deletedAt: null },
@@ -88,6 +90,12 @@ export async function getProjectById(id: string) {
       expenses: true,
       updates: { orderBy: { createdAt: "desc" } },
       fundings: true,
+      comments: {
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, name: true, username: true } },
+        },
+      },
     },
   })
 
@@ -106,10 +114,19 @@ export async function getProjectById(id: string) {
     })),
     updates: project.updates,
     timelines: project.timelines,
+    comments: project.comments.map((c) => ({
+      id: c.id,
+      comment: c.comment,
+      isAnonymous: c.isAnonymous,
+      createdAt: c.createdAt,
+      author: c.isAnonymous
+        ? maskName(c.user.name)
+        : { id: c.user.id, name: c.user.name, username: c.user.username },
+    })),
   }
 }
 
-// creates project with optional timeline and expenses in a transaction
+// Creates a new project inside a transaction, including optional timeline and expense entries.
 export async function createProject(
   data: CreateProjectRequest,
   adminId: string
@@ -161,7 +178,7 @@ export async function createProject(
   return { id: project.id, title: project.title }
 }
 
-// records a progress update and adjusts project status
+// Logs a progress update and updates the project's current progress and status.
 export async function updateProjectProgress(
   projectId: string,
   data: UpdateProgressRequest
@@ -192,6 +209,7 @@ export async function updateProjectProgress(
   return { message: "Progress updated successfully" }
 }
 
+// Masks a name to show only the first character followed by asterisks.
 function maskName(name: string): string {
   if (!name) return "Anonim"
   return name.charAt(0) + "***"

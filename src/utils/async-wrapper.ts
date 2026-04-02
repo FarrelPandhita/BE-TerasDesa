@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction, RequestHandler } from "express"
 import { AuthRequest } from "../middleware/auth-middleware"
 
+// Allow both plain Request and AuthRequest (for authenticated controllers)
 type AnyRequest = Request | AuthRequest
 
 type AsyncHandler<T extends AnyRequest = Request> = (
@@ -9,7 +10,7 @@ type AsyncHandler<T extends AnyRequest = Request> = (
   next: NextFunction
 ) => Promise<void>
 
-// wraps async handlers to forward errors to global error handler
+// removes boilerplate try-catch and forwards errors to global error handler.
 export function asyncWrapper<T extends AnyRequest>(
   fn: AsyncHandler<T>
 ): RequestHandler {

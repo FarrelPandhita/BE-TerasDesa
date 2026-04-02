@@ -18,109 +18,157 @@ enum ProjectStatus {
   selesai
 }
 
-enum TimelineStatus {
-  selesai
+enum ReportStatus {
+  diterima
   diproses
+  selesai
+}
+
+enum TimelineStatus {
   belum
+  diproses
+  selesai
 }
 
 model User {
-  id           String  @id @db.Char(36)
-  username     String  @db.VarChar(80)
-  name         String  @db.VarChar(120)
-  email        String  @unique @db.VarChar(120)
-  phoneNumber  String  @map("phone_number") @db.VarChar(20)
-  passwordHash String? @map("password_hash") @db.VarChar(255)
-  googleId     String? @unique @map("google_id")
-  role         Role    @default(citizen)
+  id           String    @id @db.Char(36)
+  username     String    @db.VarChar(80)
+  name         String    @db.VarChar(120)
+  email        String    @unique @db.VarChar(120)
+  phoneNumber  String    @map("phone_number") @db.VarChar(20)
+  passwordHash String?   @map("password_hash") @db.VarChar(255)
+  googleId     String?   @unique @map("google_id")
+  profilePictureUrl String? @map("profile_picture_url")
+  role         Role      @default(citizen)
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  projects        Project[]
+  projects         Project[]
+  comments         Comment[]
+  reports          Report[]
+  verifiedReports  Report[]   @relation("ReportVerifier")
 
   @@map("users")
 }
 
 model Project {
-  id          String        @id @db.Char(36)
-  title       String        @db.VarChar(200)
-  description String        @db.Text
-  location    String        @db.VarChar(200)
-  totalBudget BigInt        @map("total_budget")
-  status      ProjectStatus @default(perencanaan)
-  progress    Int           @default(0)
-
-  createdBy String @map("created_by") @db.Char(36)
-  user      User   @relation(fields: [createdBy], references: [id])
-
-  startDate DateTime @map("start_date") @db.Date
-  endDate   DateTime @map("end_date") @db.Date
+  id           String        @id @db.Char(36)
+  title        String        @db.VarChar(200)
+  description  String        @db.Text
+  location     String        @db.VarChar(200)
+  totalBudget  BigInt        @map("total_budget")
+  status       ProjectStatus @default(perencanaan)
+  progress     Int           @default(0)
+  
+  createdBy    String        @map("created_by") @db.Char(36)
+  user         User          @relation(fields: [createdBy], references: [id])
+  
+  startDate    DateTime      @db.Date @map("start_date")
+  endDate      DateTime      @db.Date @map("end_date")
 
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
 
   // Relations
-  updates   ProjectUpdate[]
-  timelines ProjectTimeline[]
-  expenses  DetailPengeluaranAnggaran[]
-  fundings  ProjectFunding[]
+  updates      ProjectUpdate[]
+  timelines    ProjectTimeline[]
+  expenses     DetailPengeluaranAnggaran[]
+  fundings     ProjectFunding[]
+  comments     Comment[]
+  reports      Report[]
 
   @@map("projects")
 }
 
 model ProjectUpdate {
-  id        String  @id @db.Char(36)
-  projectId String  @map("project_id") @db.Char(36)
-  project   Project @relation(fields: [projectId], references: [id])
-
+  id          String   @id @db.Char(36)
+  projectId   String   @map("project_id") @db.Char(36)
   progress    Int
-  description String @db.Text
+  description String   @db.Text
 
   createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
 
   @@map("project_updates")
 }
 
 model ProjectTimeline {
-  id        String  @id @db.Char(36)
-  projectId String  @map("project_id") @db.Char(36)
-  project   Project @relation(fields: [projectId], references: [id])
-
+  id        String         @id @db.Char(36)
+  projectId String         @map("project_id") @db.Char(36)
   stageName String         @map("stage_name") @db.VarChar(150)
-  stageDate DateTime       @map("stage_date") @db.Date
+  stageDate DateTime       @db.Date @map("stage_date")
   status    TimelineStatus @default(belum)
 
   createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
 
   @@map("project_timeline")
 }
 
 model DetailPengeluaranAnggaran {
-  id        String  @id @db.Char(36)
-  projectId String  @map("project_id") @db.Char(36)
-  project   Project @relation(fields: [projectId], references: [id])
-
+  id          String  @id @db.Char(36)
+  projectId   String  @map("project_id") @db.Char(36)
   expenseName String  @map("expense_name") @db.VarChar(150)
   amount      BigInt
   percentage  Decimal @db.Decimal(5, 2)
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  project Project @relation(fields: [projectId], references: [id])
+
   @@map("detail_pengeluaran_anggaran")
 }
 
 model ProjectFunding {
-  id        String  @id @db.Char(36)
-  projectId String  @map("project_id") @db.Char(36)
-  project   Project @relation(fields: [projectId], references: [id])
-
-  amount BigInt
+  id        String @id @db.Char(36)
+  projectId String @map("project_id") @db.Char(36)
+  amount    BigInt
 
   createdAt DateTime @default(now()) @map("created_at")
 
+  project Project @relation(fields: [projectId], references: [id])
+
   @@map("project_funding")
+}
+
+model Comment {
+  id          String  @id @db.Char(36)
+  userId      String  @map("user_id") @db.Char(36)
+  projectId   String  @map("project_id") @db.Char(36)
+  comment     String  @db.Text
+  isAnonymous Boolean @default(false) @map("is_anonymous")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user    User    @relation(fields: [userId], references: [id])
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@map("comments")
+}
+
+model Report {
+  id          String       @id @db.Char(36)
+  userId      String       @map("user_id") @db.Char(36)
+  projectId   String?      @map("project_id") @db.Char(36)
+  title       String       @db.VarChar(200)
+  description String       @db.Text
+  location    String       @db.VarChar(200)
+  status      ReportStatus @default(diterima)
+  imageUrl    String?      @map("image_url")
+  verifiedBy  String?      @map("verified_by") @db.Char(36)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id])
+  project  Project? @relation(fields: [projectId], references: [id])
+  verifier User?    @relation("ReportVerifier", fields: [verifiedBy], references: [id])
+
+  @@map("reports")
 }

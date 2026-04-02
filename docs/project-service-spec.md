@@ -106,6 +106,7 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
 **Auth**: `Authorization: Bearer {admin_token}`
 
 ### Request Body
+#### Contoh Valid (JSON)
 ```json
 {
   "title": "Pembangunan Jalan Desa Sukamaju",
@@ -129,6 +130,24 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
   ]
 }
 ```
+
+#### Contoh Invalid & Pesan Error
+1. **Tipe Data Salah (Misal: `total_budget` dikirim sebagai tipe String alih-alih Number):**
+   ```json
+   {
+     "errors": [
+       { "code": "invalid_type", "expected": "number", "received": "string", "path": ["total_budget"], "message": "Expected number, received string" }
+     ]
+   }
+   ```
+2. **Format Tanggal Bukan Format Baku ISO:**
+   ```json
+   {
+     "errors": [
+       { "validation": "regex", "code": "invalid_string", "message": "start_date must be a valid date (YYYY-MM-DD)", "path": ["start_date"] }
+     ]
+   }
+   ```
 
 ### Response `201`
 ```json
@@ -158,12 +177,26 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
 **Auth**: `Authorization: Bearer {admin_token}`
 
 ### Request Body
+#### Contoh Valid (JSON)
 ```json
 {
   "progress": 65,
   "description": "Saat ini pekerjaan memasuki tahap pengecoran bagian tengah jalan sepanjang 150 meter."
 }
 ```
+
+#### Contoh Invalid & Pesan Error
+1. **Progress Lebih Dari 100%:**
+   ```json
+   // Request Body: { "progress": 150, "description": "..." }
+
+   // Response Error 400
+   {
+     "errors": [
+       { "code": "too_big", "maximum": 100, "type": "number", "inclusive": true, "exact": false, "message": "Number must be less than or equal to 100", "path": ["progress"] }
+     ]
+   }
+   ```
 
 ### Response `200`
 ```json

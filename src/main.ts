@@ -5,6 +5,7 @@ import cors from "cors"
 
 import userRoutes from "./routes/user-routes"
 import projectRoutes from "./routes/project-routes"
+import reportRoutes from "./routes/report-routes"
 import statisticsRoutes from "./routes/statistics-routes"
 import { errorMiddleware } from "./middleware/error-middleware"
 
@@ -25,6 +26,7 @@ app.use(express.urlencoded({ extended: true }))
 // versioned routes
 app.use("/api/v1", userRoutes)
 app.use("/api/v1", projectRoutes)
+app.use("/api/v1", reportRoutes)
 app.use("/api/v1", statisticsRoutes)
 
 // health check
@@ -35,8 +37,13 @@ app.get("/api/v1/health", (_req, res) => {
 // global error handler (must be last)
 app.use(errorMiddleware)
 
-// start server
-const PORT = process.env.PORT 
-app.listen(PORT, () => {
-  console.log(`[TerasDesa] API running on port ${PORT}`)
-})
+// export app for testing (Supertest uses this without starting the server)
+export { app }
+
+// start server only when run directly (not imported by tests)
+if (require.main === module) {
+  const PORT = process.env.PORT
+  app.listen(PORT, () => {
+    console.log(`[TerasDesa] API running on port ${PORT}`)
+  })
+}

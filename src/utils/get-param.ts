@@ -1,7 +1,8 @@
 import { Request } from "express"
 import { AppError } from "./app-error"
 
-// safely extracts a string route param from Express request
+// getParam – safely extracts a string route param from Express 5 Request.
+
 export function getParam(req: Request, key: string): string {
   const value = req.params[key]
   if (!value || Array.isArray(value)) {

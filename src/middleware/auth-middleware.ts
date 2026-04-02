@@ -1,12 +1,28 @@
 import { Request, Response, NextFunction } from "express"
-import { verifyToken, TokenPayload } from "../utils/jwt"
+import { verifyToken } from "../utils/jwt"
 import { AppError } from "../utils/app-error"
+import { Role } from "@prisma/client"
 
-export interface AuthRequest extends Request {
-  user?: TokenPayload
+export interface AuthenticatedUser {
+  userId: string
+  role: Role
 }
 
-// validates JWT and attaches user payload to request
+export interface AuthRequest extends Request {
+  user?: AuthenticatedUser
+}
+
+function isJwtPayload(decoded: unknown): decoded is AuthenticatedUser {
+  return (
+    typeof decoded === "object" &&
+    decoded !== null &&
+    "userId" in decoded &&
+    "role" in decoded &&
+    typeof (decoded as AuthenticatedUser).userId === "string" &&
+    typeof (decoded as AuthenticatedUser).role === "string"
+  )
+}
+
 export function authMiddleware(
   req: Request,
   _res: Response,
@@ -19,12 +35,16 @@ export function authMiddleware(
   }
 
   const token = authHeader.slice(7)
+
   if (!token) {
     return next(new AppError(401, "Unauthorized"))
   }
 
   try {
     const decoded = verifyToken(token)
+    if (!isJwtPayload(decoded)) {
+      return next(new AppError(401, "Invalid token payload"))
+    }
     ;(req as AuthRequest).user = decoded
     next()
   } catch {
