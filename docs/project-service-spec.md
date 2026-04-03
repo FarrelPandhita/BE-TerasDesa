@@ -229,3 +229,6 @@ GET /api/v1/projects?search=jalan&tahun=2026&page=1&limit=10
    - Insert log ke `project_updates`
    - Update `progress` di tabel `projects`
    - Jika `progress >= 100`, set `status` menjadi `"selesai"`
+
+---
+

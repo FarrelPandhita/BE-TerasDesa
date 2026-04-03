@@ -8,14 +8,11 @@ afterAll(async () => {
 })
 
 describe("GET /api/v1/projects (Public List)", () => {
-  let adminId: string
-
   beforeAll(async () => {
     await cleanupTestData()
     const { user } = await createTestUser("admin")
-    adminId = user.id
-    await createTestProject(adminId)
-    await createTestProject(adminId)
+    await createTestProject(user.id)
+    await createTestProject(user.id)
   })
 
   it("should return paginated list of projects without auth", async () => {
@@ -119,7 +116,7 @@ describe("POST /api/v1/projects (Admin Only)", () => {
       .attach("images", fakeImage, { filename: "img3.jpg", contentType: "image/jpeg" })
       .attach("images", fakeImage, { filename: "img4.jpg", contentType: "image/jpeg" })
 
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(400)
   })
 
   it("should reject citizen from creating a project", async () => {

@@ -1,6 +1,6 @@
 import request from "supertest"
 import { app } from "../src/main"
-import { createTestUser, createTestProject, cleanupTestData, disconnectPrisma } from "./test-util"
+import { createTestUser, createTestProject, cleanupTestData, disconnectPrisma, createTestReport } from "./test-util"
 
 afterAll(async () => {
   await cleanupTestData()
@@ -59,7 +59,7 @@ describe("POST /api/v1/reports (Create Report)", () => {
       .attach("images", fakeImage, { filename: "img2.jpg", contentType: "image/jpeg" })
       .attach("images", fakeImage, { filename: "img3.jpg", contentType: "image/jpeg" })
 
-    expect(res.status).toBe(500)
+    expect(res.status).toBe(400)
   })
 
   // Service role key has full Supabase permissions; single image upload should succeed end-to-end.
@@ -104,12 +104,7 @@ describe("GET /api/v1/reports (List Reports)", () => {
     citizenToken = citizen.token
 
     // create a report as citizen
-    await request(app)
-      .post("/api/v1/reports")
-      .set("Authorization", `Bearer ${citizenToken}`)
-      .field("title", "Laporan warga")
-      .field("description", "Detail masalah.")
-      .field("location", "Desa Makmur")
+    await createTestReport(citizen.user.id)
   })
 
   it("should return reports for authenticated user", async () => {
@@ -144,14 +139,8 @@ describe("PATCH /api/v1/reports/:id/status (Admin Only)", () => {
     adminToken = admin.token
     citizenToken = citizen.token
 
-    const reportRes = await request(app)
-      .post("/api/v1/reports")
-      .set("Authorization", `Bearer ${citizenToken}`)
-      .field("title", "Laporan untuk di-update")
-      .field("description", "Perlu ditangani.")
-      .field("location", "Desa Sejahtera")
-
-    reportId = reportRes.body.data.id
+    const report = await createTestReport(citizen.user.id)
+    reportId = report.id
   })
 
   it("should allow admin to update report status", async () => {

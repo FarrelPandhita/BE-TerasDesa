@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express"
 import { ZodError } from "zod"
 import { AppError } from "../utils/app-error"
 import { Prisma } from "@prisma/client"
+import multer from "multer"
 
 // Global error handler middleware
 export function errorMiddleware(
@@ -34,6 +35,15 @@ export function errorMiddleware(
       res.status(404).json({ errors: "Record not found." })
       return
     }
+  }
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      res.status(400).json({ errors: `Maximum file limit for field '${err.field}' exceeded` })
+      return
+    }
+    res.status(400).json({ errors: `${err.message} (${err.code})` })
+    return
   }
   console.error("[Unhandled Error]", err)
   res.status(500).json({ errors: "Internal server error." })

@@ -46,6 +46,22 @@ export async function createTestProject(adminId: string) {
   })
 }
 
+// Creates a test report submitted by the given user.
+export async function createTestReport(userId: string, projectId?: string) {
+  const id = uuid()
+  return prisma.report.create({
+    data: {
+      id,
+      title: `Test Report ${id.substring(0, 8)}`,
+      description: "A test report detail.",
+      location: "Test Location",
+      userId,
+      projectId,
+      status: "diterima",
+    },
+  })
+}
+
 // Removes all test data from the database in the correct order (respecting foreign keys).
 export async function cleanupTestData() {
   await prisma.comment.deleteMany()

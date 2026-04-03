@@ -8,9 +8,6 @@ afterAll(async () => {
 })
 
 describe("POST /api/v1/users (Register)", () => {
-  afterAll(async () => {
-    await cleanupTestData()
-  })
 
   it("should register a new user successfully", async () => {
     const res = await request(app)
