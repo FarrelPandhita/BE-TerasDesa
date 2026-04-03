@@ -49,11 +49,13 @@ export async function createTestProject(adminId: string) {
 // Removes all test data from the database in the correct order (respecting foreign keys).
 export async function cleanupTestData() {
   await prisma.comment.deleteMany()
+  await prisma.reportImage.deleteMany()
   await prisma.report.deleteMany()
   await prisma.projectUpdate.deleteMany()
   await prisma.projectTimeline.deleteMany()
   await prisma.detailPengeluaranAnggaran.deleteMany()
   await prisma.projectFunding.deleteMany()
+  await prisma.projectImage.deleteMany()
   await prisma.project.deleteMany()
   await prisma.user.deleteMany()
 }

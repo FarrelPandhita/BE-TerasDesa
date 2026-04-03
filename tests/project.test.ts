@@ -25,6 +25,7 @@ describe("GET /api/v1/projects (Public List)", () => {
     expect(res.body.data).toHaveProperty("items")
     expect(res.body.data).toHaveProperty("total")
     expect(res.body.data.items.length).toBeGreaterThanOrEqual(2)
+    expect(Array.isArray(res.body.data.items[0].images)).toBe(true)
   })
 
   it("should support pagination via query params", async () => {
@@ -56,6 +57,8 @@ describe("GET /api/v1/projects/:id (Public Detail)", () => {
     expect(res.body.data).toHaveProperty("timelines")
     expect(res.body.data).toHaveProperty("expenses")
     expect(res.body.data).toHaveProperty("comments")
+    expect(res.body.data).toHaveProperty("images")
+    expect(Array.isArray(res.body.data.images)).toBe(true)
   })
 
   it("should return 404 for non-existent project", async () => {
@@ -77,46 +80,59 @@ describe("POST /api/v1/projects (Admin Only)", () => {
     citizenToken = citizen.token
   })
 
-  it("should allow admin to create a project", async () => {
+  it("should allow admin to create a project via multipart/form-data without images", async () => {
     const res = await request(app)
       .post("/api/v1/projects")
       .set("Authorization", `Bearer ${adminToken}`)
-      .send({
-        title: "Proyek Jembatan Desa",
-        description: "Pembangunan jembatan penghubung antar dusun.",
-        location: "Dusun Karanganyar",
-        total_budget: 500000000,
-        status: "perencanaan",
-        start_date: "2026-06-01",
-        end_date: "2026-12-31",
-        timeline: [
-          { stage_name: "Tahap Awal", stage_date: "2026-06-01", status: "belum" },
-        ],
-        expenses: [
-          { expense_name: "Material", amount: 200000000, percentage: 40 },
-        ],
-      })
+      .field("title", "Proyek Jembatan Desa")
+      .field("description", "Pembangunan jembatan penghubung antar dusun.")
+      .field("location", "Dusun Karanganyar")
+      .field("total_budget", "500000000")
+      .field("status", "perencanaan")
+      .field("start_date", "2026-06-01")
+      .field("end_date", "2026-12-31")
+      .field("timeline", JSON.stringify([
+        { stage_name: "Tahap Awal", stage_date: "2026-06-01", status: "belum" },
+      ]))
+      .field("expenses", JSON.stringify([
+        { expense_name: "Material", amount: 200000000, percentage: 40 },
+      ]))
 
     expect(res.status).toBe(201)
     expect(res.body.data).toHaveProperty("id")
     expect(res.body.data).toHaveProperty("title", "Proyek Jembatan Desa")
   })
 
+  it("should reject more than 3 image files", async () => {
+    const fakeImage = Buffer.from("fake-image-data")
+    const res = await request(app)
+      .post("/api/v1/projects")
+      .set("Authorization", `Bearer ${adminToken}`)
+      .field("title", "Proyek Gambar Banyak")
+      .field("description", "Test maks image.")
+      .field("location", "Test")
+      .field("total_budget", "100000000")
+      .field("start_date", "2026-01-01")
+      .field("end_date", "2026-12-31")
+      .attach("images", fakeImage, { filename: "img1.jpg", contentType: "image/jpeg" })
+      .attach("images", fakeImage, { filename: "img2.jpg", contentType: "image/jpeg" })
+      .attach("images", fakeImage, { filename: "img3.jpg", contentType: "image/jpeg" })
+      .attach("images", fakeImage, { filename: "img4.jpg", contentType: "image/jpeg" })
+
+    expect(res.status).toBe(500)
+  })
+
   it("should reject citizen from creating a project", async () => {
     const res = await request(app)
       .post("/api/v1/projects")
       .set("Authorization", `Bearer ${citizenToken}`)
-      .send({
-        title: "Proyek Ilegal",
-        description: "Warga biasa tidak boleh.",
-        location: "Somewhere",
-        total_budget: "100000",
-        status: "perencanaan",
-        start_date: "2026-01-01",
-        end_date: "2026-06-01",
-        timeline: [],
-        expenses: [],
-      })
+      .field("title", "Proyek Ilegal")
+      .field("description", "Warga biasa tidak boleh.")
+      .field("location", "Somewhere")
+      .field("total_budget", "100000")
+      .field("status", "perencanaan")
+      .field("start_date", "2026-01-01")
+      .field("end_date", "2026-06-01")
 
     expect(res.status).toBe(403)
   })
@@ -124,7 +140,7 @@ describe("POST /api/v1/projects (Admin Only)", () => {
   it("should reject unauthenticated request", async () => {
     const res = await request(app)
       .post("/api/v1/projects")
-      .send({ title: "No token" })
+      .field("title", "No token")
 
     expect(res.status).toBe(401)
   })
