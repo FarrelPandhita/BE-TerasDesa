@@ -69,5 +69,5 @@ jobs:
           script: |
             cd ~/farrel-app
             git pull origin main
-            docker compose exec -T farrel_be npx prisma db push
+            docker compose exec -T farrel_be npx prisma migrate deploy
             docker compose up -d --build
