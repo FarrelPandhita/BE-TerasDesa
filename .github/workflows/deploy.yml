@@ -28,11 +28,11 @@ jobs:
       DATABASE_URL: "mysql://root:root@127.0.0.1:3306/test_db"
       JWT_SECRET: "github-actions-ci-secret-do-not-use-in-production"
       PORT: "3008"
-      FRONTEND_URL: ""
-      GOOGLE_CLIENT_ID: ""
-      SUPABASE_URL: ""
-      SUPABASE_ANON_KEY: ""
-      SUPABASE_SERVICE_ROLE_KEY: ""
+      FRONTEND_URL: "http://localhost:3000"
+      GOOGLE_CLIENT_ID: "fake-google-client-id"
+      SUPABASE_URL: "https://fakeproject.supabase.co"
+      SUPABASE_ANON_KEY: "fake-anon-key"
+      SUPABASE_SERVICE_ROLE_KEY: "fake-service-role-key"
 
     steps:
       - name: Checkout Repository
