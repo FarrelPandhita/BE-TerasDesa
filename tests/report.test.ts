@@ -2,6 +2,11 @@ import request from "supertest"
 import { app } from "../src/main"
 import { createTestUser, createTestProject, cleanupTestData, disconnectPrisma, createTestReport } from "./test-util"
 
+jest.mock("../src/services/storage-service", () => ({
+  uploadFile: jest.fn().mockResolvedValue("https://fakeproject.supabase.co/storage/v1/object/public/reports/fake-path.jpg"),
+  deleteFile: jest.fn().mockResolvedValue(undefined),
+}))
+
 afterAll(async () => {
   await cleanupTestData()
   await disconnectPrisma()
