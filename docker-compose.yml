@@ -4,7 +4,9 @@ services:
     container_name: farrel_be
     restart: unless-stopped
     ports:
-      - "3008:3008"
+      - "127.0.0.1:3008:3008"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     env_file:
       - .env
     networks:
@@ -13,3 +15,4 @@ services:
 networks:
   mariadb_network:
     external: true
+
