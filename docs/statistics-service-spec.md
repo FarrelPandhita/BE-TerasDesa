@@ -9,7 +9,7 @@ Semua query dijalankan dalam satu **Prisma `$transaction`** untuk efisiensi.
 
 ## 1. Dashboard Statistics
 
-**Endpoint**: `GET /api/statistics/dashboard`  
+**Endpoint**: `GET /api/v1/statistics/dashboard`  
 **Auth**: Public
 
 ### Response `200`
@@ -50,7 +50,7 @@ Total Anggaran: 28 | Proyek Aktif: 5 | Proyek Selesai: 7 | Laporan: 37
 
 ## 2. Reports Pie Chart Breakdown
 
-**Endpoint**: `GET /api/statistics/reports-pie`  
+**Endpoint**: `GET /api/v1/statistics/reports-pie`  
 **Auth**: Public
 
 ### Response `200`

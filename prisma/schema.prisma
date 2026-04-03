@@ -78,10 +78,24 @@ model Project {
   timelines    ProjectTimeline[]
   expenses     DetailPengeluaranAnggaran[]
   fundings     ProjectFunding[]
+  images       ProjectImage[]
   comments     Comment[]
   reports      Report[]
 
   @@map("projects")
+}
+
+model ProjectImage {
+  id        String  @id @db.Char(36)
+  projectId String  @map("project_id") @db.Char(36)
+  imageUrl  String  @map("image_url")
+  order     Int     @default(0)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  project Project @relation(fields: [projectId], references: [id])
+
+  @@map("project_images")
 }
 
 model ProjectUpdate {
@@ -160,15 +174,27 @@ model Report {
   description String       @db.Text
   location    String       @db.VarChar(200)
   status      ReportStatus @default(diterima)
-  imageUrl    String?      @map("image_url")
   verifiedBy  String?      @map("verified_by") @db.Char(36)
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user     User     @relation(fields: [userId], references: [id])
-  project  Project? @relation(fields: [projectId], references: [id])
-  verifier User?    @relation("ReportVerifier", fields: [verifiedBy], references: [id])
+  user     User        @relation(fields: [userId], references: [id])
+  project  Project?    @relation(fields: [projectId], references: [id])
+  verifier User?       @relation("ReportVerifier", fields: [verifiedBy], references: [id])
+  images   ReportImage[]
 
   @@map("reports")
+}
+
+model ReportImage {
+  id       String @id @db.Char(36)
+  reportId String @map("report_id") @db.Char(36)
+  imageUrl String @map("image_url")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  report Report @relation(fields: [reportId], references: [id])
+
+  @@map("report_images")
 }

@@ -9,12 +9,12 @@ Service ini mengelola komentar warga terhadap proyek desa.
 
 ## 1. List Komentar Proyek
 
-**Endpoint**: `GET /api/projects/:id/comments`  
+**Endpoint**: `GET /api/v1/projects/:id/comments`  
 **Auth**: Public
 
 ### Contoh Request
 ```
-GET /api/projects/uuid-proyek/comments
+GET /api/v1/projects/uuid-proyek/comments
 ```
 
 ### Response `200`
@@ -64,7 +64,7 @@ GET /api/projects/uuid-proyek/comments
 
 ## 2. Tambah Komentar
 
-**Endpoint**: `POST /api/projects/:id/comments`  
+**Endpoint**: `POST /api/v1/projects/:id/comments`  
 **Auth**: `Authorization: Bearer {token}` (citizen atau admin)
 
 ### Request Body

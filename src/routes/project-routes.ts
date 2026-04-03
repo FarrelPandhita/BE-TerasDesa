@@ -1,6 +1,7 @@
 import express from "express"
 import { authMiddleware } from "../middleware/auth-middleware"
 import { roleGuard } from "../middleware/role-middleware"
+import { upload } from "../middleware/upload-middleware"
 import {
   getAllProjects,
   getProject,
@@ -20,7 +21,7 @@ router.get("/projects/:id/comments", listComments)
 router.post("/projects/:id/comments", authMiddleware, addComment)
 
 // Admin only
-router.post("/projects", authMiddleware, roleGuard("admin"), addProject)
+router.post("/projects", authMiddleware, roleGuard("admin"), upload.array("images", 3), addProject)
 router.post("/projects/:id/updates", authMiddleware, roleGuard("admin"), addProjectUpdate)
 
 export default router

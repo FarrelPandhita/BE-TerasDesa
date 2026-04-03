@@ -1,11 +1,15 @@
 import { v4 as uuid } from "uuid"
 import { prisma } from "../prisma/prisma-client"
 import { AppError } from "../utils/app-error"
+import { uploadFile, getPublicUrl, deleteFile } from "./storage-service"
 import {
   CreateProjectRequest,
   UpdateProgressRequest,
   ListProjectsQuery,
 } from "../validation/project-validation"
+
+const IMAGE_BUCKET = "project-images"
+const IMAGE_FOLDER = "projects"
 
 export interface ProjectListItem {
   id: string
@@ -16,6 +20,7 @@ export interface ProjectListItem {
   progress: number
   startDate: Date
   endDate: Date
+  images: string[]
 }
 
 export interface ProjectListResult {
@@ -56,6 +61,7 @@ export async function listProjects(query: ListProjectsQuery) {
         progress: true,
         startDate: true,
         endDate: true,
+        images: { select: { imageUrl: true }, orderBy: { order: "asc" } },
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -72,7 +78,8 @@ export async function listProjects(query: ListProjectsQuery) {
   return {
     items: items.map((p) => ({
       ...p,
-      totalBudget: p.totalBudget.toString(), // BigInt serialized as string for JSON safety
+      totalBudget: p.totalBudget.toString(),
+      images: p.images.map((img) => img.imageUrl),
     })),
     total,
     page,
@@ -81,7 +88,7 @@ export async function listProjects(query: ListProjectsQuery) {
   }
 }
 
-// Returns full project detail including timelines, expenses, updates, fundings, and comments.
+// Returns full project detail including timelines, expenses, updates, fundings, images, and comments.
 export async function getProjectById(id: string) {
   const project = await prisma.project.findFirst({
     where: { id, deletedAt: null },
@@ -90,6 +97,7 @@ export async function getProjectById(id: string) {
       expenses: true,
       updates: { orderBy: { createdAt: "desc" } },
       fundings: true,
+      images: { orderBy: { order: "asc" } },
       comments: {
         orderBy: { createdAt: "desc" },
         include: {
@@ -112,6 +120,7 @@ export async function getProjectById(id: string) {
       ...f,
       amount: f.amount.toString(),
     })),
+    images: project.images.map((img) => img.imageUrl),
     updates: project.updates,
     timelines: project.timelines,
     comments: project.comments.map((c) => ({
@@ -126,56 +135,81 @@ export async function getProjectById(id: string) {
   }
 }
 
-// Creates a new project inside a transaction, including optional timeline and expense entries.
+// Creates a new project inside a transaction, including optional timeline, expense, and image entries.
 export async function createProject(
   data: CreateProjectRequest,
-  adminId: string
+  adminId: string,
+  files: Express.Multer.File[] = []
 ) {
   const projectId = uuid()
+  const uploadedPaths: string[] = []
 
-  const project = await prisma.$transaction(async (tx) => {
-    const p = await tx.project.create({
-      data: {
-        id: projectId,
-        title: data.title,
-        description: data.description,
-        location: data.location,
-        totalBudget: BigInt(data.total_budget),
-        status: data.status,
-        startDate: new Date(data.start_date),
-        endDate: new Date(data.end_date),
-        createdBy: adminId,
-      },
+  // Upload images first; if DB write fails, these paths are used for rollback.
+  for (const file of files) {
+    const path = await uploadFile(IMAGE_BUCKET, file, IMAGE_FOLDER)
+    uploadedPaths.push(path)
+  }
+
+  try {
+    const project = await prisma.$transaction(async (tx) => {
+      const p = await tx.project.create({
+        data: {
+          id: projectId,
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          totalBudget: BigInt(data.total_budget),
+          status: data.status,
+          startDate: new Date(data.start_date),
+          endDate: new Date(data.end_date),
+          createdBy: adminId,
+        },
+      })
+
+      if (data.timeline.length > 0) {
+        await tx.projectTimeline.createMany({
+          data: data.timeline.map((t) => ({
+            id: uuid(),
+            projectId,
+            stageName: t.stage_name,
+            stageDate: new Date(t.stage_date),
+            status: t.status,
+          })),
+        })
+      }
+
+      if (data.expenses.length > 0) {
+        await tx.detailPengeluaranAnggaran.createMany({
+          data: data.expenses.map((e) => ({
+            id: uuid(),
+            projectId,
+            expenseName: e.expense_name,
+            amount: BigInt(e.amount),
+            percentage: e.percentage,
+          })),
+        })
+      }
+
+      if (uploadedPaths.length > 0) {
+        await tx.projectImage.createMany({
+          data: uploadedPaths.map((filePath, index) => ({
+            id: uuid(),
+            projectId,
+            imageUrl: getPublicUrl(IMAGE_BUCKET, filePath),
+            order: index,
+          })),
+        })
+      }
+
+      return p
     })
 
-    if (data.timeline.length > 0) {
-      await tx.projectTimeline.createMany({
-        data: data.timeline.map((t) => ({
-          id: uuid(),
-          projectId,
-          stageName: t.stage_name,
-          stageDate: new Date(t.stage_date),
-          status: t.status,
-        })),
-      })
-    }
-
-    if (data.expenses.length > 0) {
-      await tx.detailPengeluaranAnggaran.createMany({
-        data: data.expenses.map((e) => ({
-          id: uuid(),
-          projectId,
-          expenseName: e.expense_name,
-          amount: BigInt(e.amount),
-          percentage: e.percentage,
-        })),
-      })
-    }
-
-    return p
-  })
-
-  return { id: project.id, title: project.title }
+    return { id: project.id, title: project.title }
+  } catch (error) {
+    // Rollback: delete all uploaded images if the database transaction fails.
+    await Promise.all(uploadedPaths.map((p) => deleteFile(IMAGE_BUCKET, p)))
+    throw error
+  }
 }
 
 // Logs a progress update and updates the project's current progress and status.

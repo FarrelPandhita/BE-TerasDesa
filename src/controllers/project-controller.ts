@@ -32,8 +32,9 @@ export const getProject = asyncWrapper(async (req: Request, res: Response) => {
 // POST /api/v1/projects
 export const addProject = asyncWrapper(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError(401, "Unauthorized")
+  const files = Array.isArray(req.files) ? req.files : []
   const validated = createProjectValidation.parse(req.body)
-  const project = await createProject(validated, req.user.userId)
+  const project = await createProject(validated, req.user.userId, files)
   res.status(201).json({ data: project })
 })
 

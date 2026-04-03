@@ -20,9 +20,9 @@ import {
 export const submitReport = asyncWrapper(async (req: AuthRequest, res: Response) => {
   if (!req.user) throw new AppError(401, "Unauthorized")
 
-  // Parse body (handled by multer in multipart/form-data)
+  const files = Array.isArray(req.files) ? req.files : []
   const validated = createReportValidation.parse(req.body)
-  const report = await createReport(validated, req.user.userId, req.file)
+  const report = await createReport(validated, req.user.userId, files)
 
   res.status(201).json({ data: report })
 })

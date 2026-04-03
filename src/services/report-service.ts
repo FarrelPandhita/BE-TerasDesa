@@ -8,11 +8,14 @@ import {
   ListReportsQuery,
 } from "../validation/report-validation"
 
-// Creates a new citizen report with an initial status of "diterima" and optional image upload.
+const IMAGE_BUCKET = "report-photos"
+const IMAGE_FOLDER = "reports"
+
+// Creates a new citizen report with status "diterima" and up to 2 optional image uploads.
 export async function createReport(
   data: CreateReportRequest,
   userId: string,
-  file?: Express.Multer.File
+  files: Express.Multer.File[] = []
 ) {
   if (data.project_id) {
     const project = await prisma.project.findFirst({
@@ -21,42 +24,52 @@ export async function createReport(
     if (!project) throw new AppError(404, "Linked project not found")
   }
 
-  let imageUrl: string | null = null
-  let storagePath: string | null = null
+  const uploadedPaths: string[] = []
 
-  if (file) {
-    storagePath = await uploadFile("report-photos", file, "reports")
-    imageUrl = getPublicUrl("report-photos", storagePath)
+  for (const file of files) {
+    const path = await uploadFile(IMAGE_BUCKET, file, IMAGE_FOLDER)
+    uploadedPaths.push(path)
   }
 
   try {
-    const report = await prisma.report.create({
-      data: {
-        id: uuid(),
-        userId,
-        projectId: data.project_id ?? null,
-        title: data.title,
-        description: data.description,
-        location: data.location,
-        status: "diterima",
-        imageUrl,
-      },
-      select: {
-        id: true,
-        title: true,
-        status: true,
-        imageUrl: true,
-        createdAt: true,
-      },
+    const report = await prisma.$transaction(async (tx) => {
+      const r = await tx.report.create({
+        data: {
+          id: uuid(),
+          userId,
+          projectId: data.project_id ?? null,
+          title: data.title,
+          description: data.description,
+          location: data.location,
+          status: "diterima",
+        },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          createdAt: true,
+        },
+      })
+
+      if (uploadedPaths.length > 0) {
+        await tx.reportImage.createMany({
+          data: uploadedPaths.map((filePath) => ({
+            id: uuid(),
+            reportId: r.id,
+            imageUrl: getPublicUrl(IMAGE_BUCKET, filePath),
+          })),
+        })
+      }
+
+      return r
     })
 
-    return report
+    const images = uploadedPaths.map((p) => getPublicUrl(IMAGE_BUCKET, p))
+    return { ...report, images }
   } catch (error) {
-    // Rollback: delete the uploaded file if database insertion fails.
-    if (storagePath) {
-      await deleteFile("report-photos", storagePath)
-    }
-    throw error // Re-throw the original error to be handled by the controller.
+    // Rollback: delete all uploaded images if the database transaction fails.
+    await Promise.all(uploadedPaths.map((p) => deleteFile(IMAGE_BUCKET, p)))
+    throw error
   }
 }
 
@@ -80,11 +93,11 @@ export async function listReports(
         title: true,
         location: true,
         status: true,
-        imageUrl: true,
         createdAt: true,
         updatedAt: true,
         user: { select: { name: true, username: true } },
         project: { select: { id: true, title: true } },
+        images: { select: { imageUrl: true } },
       },
       orderBy: { createdAt: "desc" },
       skip,
@@ -99,7 +112,10 @@ export async function listReports(
   ])
 
   return {
-    items: items.map(({ ...rest }) => rest),
+    items: items.map(({ images, ...rest }) => ({
+      ...rest,
+      images: images.map((img) => img.imageUrl),
+    })),
     total,
     page,
     limit,
@@ -119,6 +135,7 @@ export async function getReportById(
       user: { select: { id: true, name: true, username: true, phoneNumber: true } },
       project: { select: { id: true, title: true } },
       verifier: { select: { id: true, name: true } },
+      images: { select: { imageUrl: true } },
     },
   })
 
@@ -134,7 +151,7 @@ export async function getReportById(
     description: report.description,
     location: report.location,
     status: report.status,
-    imageUrl: report.imageUrl,
+    images: report.images.map((img) => img.imageUrl),
     createdAt: report.createdAt,
     updatedAt: report.updatedAt,
     user: report.user,
@@ -171,16 +188,21 @@ export async function updateReportStatus(
 
 // Returns a lightweight list of all reports belonging to the given user.
 export async function getMyReports(userId: string) {
-  return prisma.report.findMany({
+  const reports = await prisma.report.findMany({
     where: { userId },
     select: {
       id: true,
       title: true,
       status: true,
       location: true,
-      imageUrl: true,
       createdAt: true,
+      images: { select: { imageUrl: true } },
     },
     orderBy: { createdAt: "desc" },
   })
+
+  return reports.map(({ images, ...rest }) => ({
+    ...rest,
+    images: images.map((img) => img.imageUrl),
+  }))
 }

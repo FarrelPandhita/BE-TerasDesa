@@ -9,7 +9,7 @@ Service ini mengelola seluruh data **Proyek Desa**: pembuatan, update progress, 
 
 ## 1. List Proyek
 
-**Endpoint**: `GET /api/projects`  
+**Endpoint**: `GET /api/v1/projects`  
 **Auth**: Public
 
 ### Query Parameters
@@ -22,7 +22,7 @@ Service ini mengelola seluruh data **Proyek Desa**: pembuatan, update progress, 
 
 ### Contoh Request
 ```
-GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
+GET /api/v1/projects?search=jalan&tahun=2026&page=1&limit=10
 ```
 
 ### Response `200`
@@ -38,7 +38,10 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
         "status": "berjalan",
         "progress": 65,
         "startDate": "2026-01-12T00:00:00.000Z",
-        "endDate": "2026-03-30T00:00:00.000Z"
+        "endDate": "2026-03-30T00:00:00.000Z",
+        "images": [
+          "https://...supabase.co/storage/v1/object/public/project-images/projects/img1.jpg"
+        ]
       }
     ],
     "total": 12,
@@ -55,7 +58,7 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
 
 ## 2. Detail Proyek
 
-**Endpoint**: `GET /api/projects/:id`  
+**Endpoint**: `GET /api/v1/projects/:id`  
 **Auth**: Public
 
 ### Response `200`
@@ -71,6 +74,10 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
     "progress": 65,
     "startDate": "2026-01-12T00:00:00.000Z",
     "endDate": "2026-03-30T00:00:00.000Z",
+    "images": [
+      "https://...supabase.co/storage/v1/object/public/project-images/projects/img1.jpg",
+      "https://...supabase.co/storage/v1/object/public/project-images/projects/img2.jpg"
+    ],
     "timelines": [
       { "stageName": "Perencanaan Proyek", "stageDate": "2026-01-02", "status": "selesai" }
     ],
@@ -86,12 +93,6 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
         "comment": "Semoga cepat selesai",
         "isAnonymous": false,
         "author": { "id": "uuid", "name": "Bayu Nugroho", "username": "bayu" }
-      },
-      {
-        "id": "uuid2",
-        "comment": "Semangat!",
-        "isAnonymous": true,
-        "author": "S***"
       }
     ]
   }
@@ -102,11 +103,25 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
 
 ## 3. Buat Proyek (Admin)
 
-**Endpoint**: `POST /api/projects`  
-**Auth**: `Authorization: Bearer {admin_token}`
+**Endpoint**: `POST /api/v1/projects`  
+**Auth**: `Authorization: Bearer {admin_token}`  
+**Content-Type**: `multipart/form-data`
 
-### Request Body
-#### Contoh Valid (JSON)
+### Request Body (form-data)
+| Field | Tipe | Deskripsi |
+|---|---|---|
+| `title` | string | Judul proyek |
+| `description` | string | Deskripsi proyek |
+| `location` | string | Lokasi proyek |
+| `total_budget` | number | Total anggaran (dalam rupiah) |
+| `start_date` | string (YYYY-MM-DD) | Tanggal mulai |
+| `end_date` | string (YYYY-MM-DD) | Tanggal selesai |
+| `status` | string | `perencanaan` / `berjalan` / `selesai` (opsional, default `perencanaan`) |
+| `timeline` | JSON string (array) | Daftar tahapan proyek (opsional) |
+| `expenses` | JSON string (array) | Daftar pengeluaran (opsional) |
+| `images` | file (maks 3) | Foto proyek (opsional, maks 5MB per file, JPG/PNG/WebP) |
+
+> **Catatan**: Karena request menggunakan `multipart/form-data`, field non-file seperti `timeline` dan `expenses` harus dikirim sebagai JSON string, bukan JSON object.
 ```json
 {
   "title": "Pembangunan Jalan Desa Sukamaju",
@@ -173,7 +188,7 @@ GET /api/projects?search=jalan&tahun=2026&page=1&limit=10
 
 ## 4. Update Progress Proyek (Admin)
 
-**Endpoint**: `POST /api/projects/:id/updates`  
+**Endpoint**: `POST /api/v1/projects/:id/updates`  
 **Auth**: `Authorization: Bearer {admin_token}`
 
 ### Request Body

@@ -9,8 +9,8 @@ Service ini mengelola laporan (aduan) warga kepada pihak desa.
 
 ## 1. Buat Laporan
 
-**Endpoint**: `POST /api/reports`  
-**Auth**: `Authorization: Bearer {token}` (citizen atau admin)
+**Endpoint**: `POST /api/v1/reports`  
+**Auth**: `Authorization: Bearer {token}` (citizen only)
 **Content-Type**: `multipart/form-data`
 
 ### Request Body (form-data)
@@ -20,7 +20,7 @@ Service ini mengelola laporan (aduan) warga kepada pihak desa.
 | `description` | string | Detail kejadian |
 | `location` | string | Lokasi kejadian |
 | `project_id` | uuid (string) | ID proyek terkait (opsional) |
-| `image` | file | Foto pendukung (opsional, max 5MB, format: jpg/png/webp) |
+| `images` | file (maks 2) | Foto pendukung (opsional, maks 5MB per file, JPG/PNG/WebP) |
 
 #### Contoh Valid (Postman form-data)
 ```text
@@ -69,9 +69,11 @@ image       : [File lampiran.jpg]
 {
   "data": {
     "id": "uuid-laporan",
-    "title": "Jalan berlubang di depan SD Negeri 1",
+    "title": "Jalan tertutup longsor",
     "status": "diterima",
-    "imageUrl": "https://...supabase.co/storage/v1/object/public/report-photos/uuid.jpg",
+    "images": [
+      "https://...supabase.co/storage/v1/object/public/report-photos/reports/img1.jpg"
+    ],
     "createdAt": "2026-03-25T10:00:00.000Z"
   }
 }
@@ -96,7 +98,7 @@ image       : [File lampiran.jpg]
 
 ## 2. List Laporan
 
-**Endpoint**: `GET /api/reports`  
+**Endpoint**: `GET /api/v1/reports`  
 **Auth**: `Authorization: Bearer {token}`
 
 ### Aturan Akses
@@ -114,7 +116,7 @@ image       : [File lampiran.jpg]
 
 ### Contoh Request
 ```
-GET /api/reports?status=diterima&page=1&limit=10
+GET /api/v1/reports?status=diterima&page=1&limit=10
 ```
 
 ### Response `200`
@@ -129,6 +131,7 @@ GET /api/reports?status=diterima&page=1&limit=10
         "status": "diterima",
         "createdAt": "2026-03-25T10:00:00.000Z",
         "updatedAt": "2026-03-25T10:00:00.000Z",
+        "images": ["https://...supabase.co/storage/v1/object/public/report-photos/reports/img1.jpg"],
         "user": { "name": "Budi Santoso", "username": "budisantoso" },
         "project": { "id": "uuid-proyek", "title": "Pembangunan Jalan Desa" }
       }
@@ -150,7 +153,7 @@ GET /api/reports?status=diterima&page=1&limit=10
 
 ## 3. Detail Laporan
 
-**Endpoint**: `GET /api/reports/:id`  
+**Endpoint**: `GET /api/v1/reports/:id`  
 **Auth**: `Authorization: Bearer {token}`
 
 ### Aturan Akses
@@ -196,7 +199,7 @@ Citizen hanya boleh mengakses laporan milik sendiri. Admin dapat mengakses semua
 
 ## 4. Riwayat Laporan Saya
 
-**Endpoint**: `GET /api/reports/me`  
+**Endpoint**: `GET /api/v1/reports/me`  
 **Auth**: `Authorization: Bearer {token}`
 
 ### Response `200`
@@ -219,13 +222,13 @@ Citizen hanya boleh mengakses laporan milik sendiri. Admin dapat mengakses semua
 2. Query `report.findMany` dengan `where: { userId }` dan `orderBy: createdAt desc`
 3. Return array ringkas laporan milik user tersebut
 
-> Endpoint ini berbeda dari `GET /api/reports` karena tidak menerima query params dan selalu hanya mengembalikan laporan milik token yang sedang login.
+> Endpoint ini berbeda dari `GET /api/v1/reports` karena tidak menerima query params dan selalu hanya mengembalikan laporan milik token yang sedang login.
 
 ---
 
 ## 5. Update Status Laporan (Admin)
 
-**Endpoint**: `PATCH /api/reports/:id/status`  
+**Endpoint**: `PATCH /api/v1/reports/:id/status`  
 **Auth**: `Authorization: Bearer {admin_token}`
 
 ### Request Body

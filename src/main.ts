@@ -14,9 +14,23 @@ const app = express()
 // security
 app.use(helmet())
 app.use(cors({
-  origin: process.env.FRONTEND_URL ?? "*",
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin: (origin, callback) => {
+    // Allow requests without origin (like from Postman)
+    if (!origin) return callback(null, true);
+
+    const allowedOrigins = process.env.FRONTEND_URL 
+      ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
+      : [];
+      
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Blocked by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "Origin", "X-Requested-With"],
 }))
 
 // body parsing

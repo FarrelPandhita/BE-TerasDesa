@@ -12,8 +12,8 @@ import {
 
 const router = express.Router()
 
-// All report endpoints require auth
-router.post("/reports", authMiddleware, upload.single("image"), submitReport)
+// Citizen only — submit report requires auth and citizen role
+router.post("/reports", authMiddleware, roleGuard("citizen"), upload.array("images", 2), submitReport)
 router.get("/reports/me", authMiddleware, getMyReportHistory)
 router.get("/reports", authMiddleware, getReports)
 router.get("/reports/:id", authMiddleware, getReport)

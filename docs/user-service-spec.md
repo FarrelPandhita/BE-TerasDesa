@@ -9,7 +9,7 @@ Service ini mengelola autentikasi dan profil pengguna TerasDesa.
 
 ## 1. Register User
 
-**Endpoint**: `POST /api/users`  
+**Endpoint**: `POST /api/v1/users`  
 **Auth**: Public
 
 ### Request Body
@@ -83,7 +83,7 @@ Service ini mengelola autentikasi dan profil pengguna TerasDesa.
 
 ## 2. Login User
 
-**Endpoint**: `POST /api/users/login`  
+**Endpoint**: `POST /api/v1/users/login`  
 **Auth**: Public
 
 ### Request Body
@@ -192,7 +192,7 @@ Endpoint ini digunakan ketika pengguna menekan tombol "Sign In with Google" di F
 
 ## 4. Get Current User
 
-**Endpoint**: `GET /api/users/current`  
+**Endpoint**: `GET /api/v1/users/current`  
 **Auth**: `Authorization: Bearer {token}`
 
 ### Response `200`
@@ -226,7 +226,7 @@ const user = await apiClient.get('/users/current')
 
 ## 4. Update Profile Picture
 
-**Endpoint**: `PATCH /api/users/profile-picture`  
+**Endpoint**: `PATCH /api/v1/users/profile-picture`  
 **Auth**: `Authorization: Bearer {token}`
 **Content-Type**: `multipart/form-data`
 
