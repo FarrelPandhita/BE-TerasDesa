@@ -21,7 +21,6 @@ app.use(cors({
     const allowedOrigins = process.env.FRONTEND_URL 
       ? process.env.FRONTEND_URL.split(',').map((url) => url.trim())
       : [];
-      
     if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -56,6 +55,15 @@ export { app }
 
 // start server only when run directly (not imported by tests)
 if (require.main === module) {
+  // Fail fast if critical env vars are missing.
+  const required = ["DATABASE_URL", "JWT_SECRET", "PORT"]
+  for (const key of required) {
+    if (!process.env[key]) {
+      console.error(`[FATAL] Missing required env var: ${key}`)
+      process.exit(1)
+    }
+  }
+
   const PORT = process.env.PORT
   app.listen(PORT, () => {
     console.log(`[TerasDesa] API running on port ${PORT}`)

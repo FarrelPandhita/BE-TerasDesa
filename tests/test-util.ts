@@ -1,13 +1,11 @@
 import { prisma } from "../src/prisma/prisma-client"
 import bcrypt from "bcrypt"
 import { v4 as uuid } from "uuid"
-import jwt from "jsonwebtoken"
-
-const SECRET = process.env.JWT_SECRET!
+import { generateToken } from "../src/utils/jwt"
 
 // Generates a valid JWT token for testing purposes.
 export function generateTestToken(userId: string, role: "admin" | "citizen"): string {
-  return jwt.sign({ userId, role }, SECRET, { expiresIn: "1d" })
+  return generateToken(userId, role)
 }
 
 // Creates a test user and returns the user record and a valid token.
@@ -29,7 +27,10 @@ export async function createTestUser(role: "admin" | "citizen" = "citizen") {
 }
 
 // Creates a test project owned by the given admin user.
-export async function createTestProject(adminId: string) {
+export async function createTestProject(
+  adminId: string,
+  options?: { startDate?: string; endDate?: string; rw?: string }
+) {
   const id = uuid()
   return prisma.project.create({
     data: {
@@ -37,10 +38,11 @@ export async function createTestProject(adminId: string) {
       title: `Test Project ${id.substring(0, 8)}`,
       description: "A test project for automated testing.",
       location: "Test Location",
+      rw: options?.rw ?? null,
       totalBudget: BigInt(100000000),
       status: "berjalan",
-      startDate: new Date("2026-01-01"),
-      endDate: new Date("2026-12-31"),
+      startDate: new Date(options?.startDate ?? "2026-01-01"),
+      endDate: new Date(options?.endDate ?? "2026-12-31"),
       createdBy: adminId,
     },
   })

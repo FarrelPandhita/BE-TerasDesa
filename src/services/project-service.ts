@@ -1,6 +1,7 @@
 import { v4 as uuid } from "uuid"
 import { prisma } from "../prisma/prisma-client"
 import { AppError } from "../utils/app-error"
+import { maskName } from "../utils/mask-name"
 import { uploadFile, getPublicUrl, deleteFile } from "./storage-service"
 import {
   CreateProjectRequest,
@@ -15,6 +16,7 @@ export interface ProjectListItem {
   id: string
   title: string
   location: string
+  rw: string | null
   totalBudget: string
   status: string
   progress: number
@@ -31,31 +33,34 @@ export interface ProjectListResult {
   totalPages: number
 }
 
-// Returns paginated list of projects with optional search and year filter.
+// Returns paginated list of projects with optional search, rw, and year filter.
 export async function listProjects(query: ListProjectsQuery) {
-  const { search, tahun, page, limit } = query
+  const { search, rw, tahun, page, limit } = query
   const skip = (page - 1) * limit
+
+  // Shared filter prevents count/query mismatch.
+  const where = {
+    deletedAt: null as null,
+    ...(search ? { title: { contains: search } } : {}),
+    ...(rw ? { rw } : {}),
+    ...(tahun
+      ? {
+          startDate: {
+            gte: new Date(`${tahun}-01-01`),
+            lte: new Date(`${tahun}-12-31`),
+          },
+        }
+      : {}),
+  }
 
   const [items, total] = await prisma.$transaction([
     prisma.project.findMany({
-      where: {
-        deletedAt: null,
-        ...(search
-          ? { title: { contains: search } }
-          : {}),
-        ...(tahun
-          ? {
-              startDate: {
-                gte: new Date(`${tahun}-01-01`),
-                lte: new Date(`${tahun}-12-31`),
-              },
-            }
-          : {}),
-      },
+      where,
       select: {
         id: true,
         title: true,
         location: true,
+        rw: true,
         totalBudget: true,
         status: true,
         progress: true,
@@ -67,12 +72,7 @@ export async function listProjects(query: ListProjectsQuery) {
       skip,
       take: limit,
     }),
-    prisma.project.count({
-      where: {
-        deletedAt: null,
-        ...(search ? { title: { contains: search } } : {}),
-      },
-    }),
+    prisma.project.count({ where }),
   ])
 
   return {
@@ -158,6 +158,7 @@ export async function createProject(
           title: data.title,
           description: data.description,
           location: data.location,
+          rw: data.rw ?? null,
           totalBudget: BigInt(data.total_budget),
           status: data.status,
           startDate: new Date(data.start_date),
@@ -222,6 +223,13 @@ export async function updateProjectProgress(
   })
   if (!project) throw new AppError(404, "Project not found")
 
+  // Derive project status from progress value.
+  const newStatus = data.progress >= 100
+    ? "selesai" as const
+    : data.progress > 0
+      ? "berjalan" as const
+      : "perencanaan" as const
+
   await prisma.$transaction([
     prisma.projectUpdate.create({
       data: {
@@ -235,7 +243,7 @@ export async function updateProjectProgress(
       where: { id: projectId },
       data: {
         progress: data.progress,
-        status: data.progress >= 100 ? "selesai" : "berjalan",
+        status: newStatus,
       },
     }),
   ])
@@ -243,8 +251,3 @@ export async function updateProjectProgress(
   return { message: "Progress updated successfully" }
 }
 
-// Masks a name to show only the first character followed by asterisks.
-function maskName(name: string): string {
-  if (!name) return "Anonim"
-  return name.charAt(0) + "***"
-}

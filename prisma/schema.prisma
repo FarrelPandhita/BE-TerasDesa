@@ -59,6 +59,7 @@ model Project {
   title        String        @db.VarChar(200)
   description  String        @db.Text
   location     String        @db.VarChar(200)
+  rw           String?       @db.VarChar(10)
   totalBudget  BigInt        @map("total_budget")
   status       ProjectStatus @default(perencanaan)
   progress     Int           @default(0)

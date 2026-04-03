@@ -31,6 +31,14 @@ export function errorMiddleware(
       res.status(409).json({ errors: "Data already exists (unique constraint)." })
       return
     }
+    if (err.code === "P2003") {
+      res.status(400).json({ errors: "Related record not found (foreign key constraint)." })
+      return
+    }
+    if (err.code === "P2022") {
+      res.status(500).json({ errors: "Database schema out of sync. Run prisma db push on the server." })
+      return
+    }
     if (err.code === "P2025") {
       res.status(404).json({ errors: "Record not found." })
       return

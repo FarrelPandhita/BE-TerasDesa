@@ -162,3 +162,51 @@ describe("PATCH /api/v1/reports/:id/status (Admin Only)", () => {
     expect(res.status).toBe(403)
   })
 })
+
+describe("GET /api/v1/reports (Citizen Data Isolation)", () => {
+  let citizenAToken: string
+  let citizenBToken: string
+
+  beforeAll(async () => {
+    await cleanupTestData()
+    const citizenA = await createTestUser("citizen")
+    const citizenB = await createTestUser("citizen")
+    citizenAToken = citizenA.token
+    citizenBToken = citizenB.token
+
+    await createTestReport(citizenA.user.id)
+    await createTestReport(citizenB.user.id)
+  })
+
+  it("should only return reports belonging to the requesting citizen", async () => {
+    const res = await request(app)
+      .get("/api/v1/reports")
+      .set("Authorization", `Bearer ${citizenAToken}`)
+
+    expect(res.status).toBe(200)
+    expect(res.body.data.items.length).toBe(1)
+  })
+})
+
+describe("GET /api/v1/reports/:id (Cross-Access Forbidden)", () => {
+  let citizenBToken: string
+  let reportAId: string
+
+  beforeAll(async () => {
+    await cleanupTestData()
+    const citizenA = await createTestUser("citizen")
+    const citizenB = await createTestUser("citizen")
+    citizenBToken = citizenB.token
+
+    const report = await createTestReport(citizenA.user.id)
+    reportAId = report.id
+  })
+
+  it("should return 403 when citizen accesses another citizen's report", async () => {
+    const res = await request(app)
+      .get(`/api/v1/reports/${reportAId}`)
+      .set("Authorization", `Bearer ${citizenBToken}`)
+
+    expect(res.status).toBe(403)
+  })
+})

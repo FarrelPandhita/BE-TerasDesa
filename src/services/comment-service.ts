@@ -1,6 +1,7 @@
 import { v4 as uuid } from "uuid"
 import { prisma } from "../prisma/prisma-client"
 import { AppError } from "../utils/app-error"
+import { maskName } from "../utils/mask-name"
 import { CreateCommentRequest } from "../validation/comment-validation"
 
 // Returns all comments for a project, with anonymous authors masked.
@@ -59,8 +60,3 @@ export async function createComment(
   return comment
 }
 
-// Masks a name to show only the first character followed by asterisks.
-function maskName(name: string): string {
-  if (!name) return "Anonim"
-  return name.charAt(0) + "***"
-}

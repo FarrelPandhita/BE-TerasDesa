@@ -31,6 +31,9 @@ export async function createReport(
     uploadedPaths.push(path)
   }
 
+  // Pre-compute URLs once to avoid redundant getPublicUrl calls.
+  const imageUrls = uploadedPaths.map((p) => getPublicUrl(IMAGE_BUCKET, p))
+
   try {
     const report = await prisma.$transaction(async (tx) => {
       const r = await tx.report.create({
@@ -51,12 +54,12 @@ export async function createReport(
         },
       })
 
-      if (uploadedPaths.length > 0) {
+      if (imageUrls.length > 0) {
         await tx.reportImage.createMany({
-          data: uploadedPaths.map((filePath) => ({
+          data: imageUrls.map((url) => ({
             id: uuid(),
             reportId: r.id,
-            imageUrl: getPublicUrl(IMAGE_BUCKET, filePath),
+            imageUrl: url,
           })),
         })
       }
@@ -64,10 +67,8 @@ export async function createReport(
       return r
     })
 
-    const images = uploadedPaths.map((p) => getPublicUrl(IMAGE_BUCKET, p))
-    return { ...report, images }
+    return { ...report, images: imageUrls }
   } catch (error) {
-    // Rollback: delete all uploaded images if the database transaction fails.
     await Promise.all(uploadedPaths.map((p) => deleteFile(IMAGE_BUCKET, p)))
     throw error
   }
