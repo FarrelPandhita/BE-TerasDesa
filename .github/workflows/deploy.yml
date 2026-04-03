@@ -65,6 +65,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: 11050
           script: |
             cd ~/farrel-app
             git pull origin main
