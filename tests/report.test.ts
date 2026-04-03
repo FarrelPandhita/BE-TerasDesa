@@ -5,6 +5,7 @@ import { createTestUser, createTestProject, cleanupTestData, disconnectPrisma, c
 jest.mock("../src/services/storage-service", () => ({
   uploadFile: jest.fn().mockResolvedValue("https://fakeproject.supabase.co/storage/v1/object/public/reports/fake-path.jpg"),
   deleteFile: jest.fn().mockResolvedValue(undefined),
+  getPublicUrl: jest.fn().mockImplementation((bucket: string, path: string) => `https://fakeproject.supabase.co/storage/v1/object/public/${bucket}/${path}`),
 }))
 
 afterAll(async () => {
