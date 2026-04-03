@@ -2,7 +2,7 @@ import { z } from "zod"
 
 export const createReportValidation = z.object({
   title: z.string().min(1).max(200),
-  description: z.string().min(1),
+  description: z.string().min(1).max(10000),
   location: z.string().min(1).max(200),
   project_id: z.uuid().optional(),
 })

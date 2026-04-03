@@ -16,7 +16,7 @@ const expenseEntrySchema = z.object({
 
 export const createProjectValidation = z.object({
   title: z.string().min(1).max(200),
-  description: z.string().min(1),
+  description: z.string().min(1).max(10000),
   location: z.string().min(1).max(200),
   rw: z.string().max(10).optional(),
   total_budget: z.coerce.number().int().positive(),
@@ -43,12 +43,12 @@ export const createProjectValidation = z.object({
 
 export const updateProjectProgressValidation = z.object({
   progress: z.number().int().min(0).max(100),
-  description: z.string().min(1),
+  description: z.string().min(1).max(5000),
 })
 
 export const listProjectsQueryValidation = z.object({
-  search: z.string().optional(),
-  rw: z.string().optional(),
+  search: z.string().max(100).optional(),
+  rw: z.string().max(10).optional(),
   tahun: z.string()
     .optional()
     .refine((v) => !v || /^\d{4}$/.test(v), { message: "tahun must be a 4-digit year" }),

@@ -19,10 +19,7 @@ if (process.env.NODE_ENV !== "test") {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const statusMonitor = require("express-status-monitor")
   // APM dashboard at /api/v1/system-status
-  app.use(statusMonitor({ 
-    path: "/api/v1/system-status",
-    socketPath: "/farrel/socket.io" 
-  }))
+  app.use(statusMonitor({ path: "/api/v1/system-status" }))
 }
 
 // security
