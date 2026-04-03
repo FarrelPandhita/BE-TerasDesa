@@ -28,7 +28,8 @@ export async function uploadFile(
   return filePath
 }
 
-// Deletes a file from a Supabase bucket.
+// Deletes a file from a Supabase bu
+// cket.
 export async function deleteFile(bucket: string, filePath: string) {
   const { error } = await supabase.storage.from(bucket).remove([filePath])
   if (error) {

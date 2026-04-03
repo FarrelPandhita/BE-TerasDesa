@@ -3,6 +3,7 @@ import { ZodError } from "zod"
 import { AppError } from "../utils/app-error"
 import { Prisma } from "@prisma/client"
 import multer from "multer"
+import { logger } from "../utils/logger"
 
 // Global error handler middleware
 export function errorMiddleware(
@@ -53,6 +54,9 @@ export function errorMiddleware(
     res.status(400).json({ errors: `${err.message} (${err.code})` })
     return
   }
-  console.error("[Unhandled Error]", err)
+  // Log unexpected server errors to file; client-side errors are handled above.
+  const message = err instanceof Error ? err.message : String(err)
+  const stack = err instanceof Error ? err.stack : undefined
+  logger.error(message, { stack })
   res.status(500).json({ errors: "Internal server error." })
 }
